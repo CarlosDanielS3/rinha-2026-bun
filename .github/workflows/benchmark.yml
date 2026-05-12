@@ -23,7 +23,7 @@ jobs:
 
       - name: Download pre-generated test data
         run: |
-          gh release download v0.1.0 --repo CarlosDanielS3/rinha-2026-bun --pattern "test-data.json" --dir /tmp/rinha/test
+          gh release download v0.1.0 --repo CarlosDanielS3/rinha-2026-bun --pattern "test-data.json" --dir /tmp/rinha/test --clobber
           ls -lh /tmp/rinha/test/test-data.json
         env:
           GH_TOKEN: ${{ github.token }}
