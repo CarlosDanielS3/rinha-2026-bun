@@ -1,0 +1,43 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - sockets:/sockets
+    depends_on:
+      api-1:
+        condition: service_started
+      api-2:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: "15M"
+
+  api-1: &api
+    image: ghcr.io/carlosdaniels3/rinha-2026-bun:submission-8d96511
+    platform: linux/amd64
+    environment:
+      - INDEX_PATH=/data/index.bin
+      - API_PORT=9999
+      - SOCKET_PATH=/sockets/api1.sock
+    volumes:
+      - sockets:/sockets
+    deploy:
+      resources:
+        limits:
+          cpus: "0.45"
+          memory: "167M"
+
+  api-2:
+    <<: *api
+    environment:
+      - INDEX_PATH=/data/index.bin
+      - API_PORT=9999
+      - SOCKET_PATH=/sockets/api2.sock
+
+volumes:
+  sockets:
