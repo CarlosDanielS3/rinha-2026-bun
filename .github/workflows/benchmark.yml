@@ -28,12 +28,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Build index
-        uses: oven-sh/setup-bun@v2
-      - run: |
-          bun install
-          RESOURCES_DIR=./resources OUTPUT_PATH=./index.bin bun run src/build-index.ts
+      - name: Download pre-built index
+        run: |
+          gh release download v0.1.0 --repo CarlosDanielS3/rinha-2026-bun --pattern "index.bin" --dir . --clobber
           ls -lh index.bin
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build and start services
         run: |
