@@ -17,23 +17,16 @@ jobs:
           grep -o 'avx2' /proc/cpuinfo | head -1 || echo "WARNING: No AVX2!"
           lscpu | grep -E 'Model name|CPU\(s\):|Thread'
 
-      - name: Clone competition repo (test harness + data generator)
+      - name: Clone competition repo (test harness)
         run: |
           git clone --depth 1 https://github.com/zanfranceschi/rinha-de-backend-2026.git /tmp/rinha
 
-      - name: Build data generator
+      - name: Download pre-generated test data
         run: |
-          cd /tmp/rinha/data-generator
-          make
-          ls -la generate
-
-      - name: Generate test data
-        run: |
-          cd /tmp/rinha
-          gunzip -k resources/references.json.gz
-          ./generate-data.sh
-          ls -lh test/test-data.json
-          echo "Test data generated"
+          gh release download v0.1.0 --repo CarlosDanielS3/rinha-2026-bun --pattern "test-data.json" --dir /tmp/rinha/test
+          ls -lh /tmp/rinha/test/test-data.json
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build index
         uses: oven-sh/setup-bun@v2
