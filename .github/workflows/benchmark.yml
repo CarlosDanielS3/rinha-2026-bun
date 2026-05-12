@@ -37,7 +37,7 @@ jobs:
 
       - name: Build and start services
         run: |
-          docker compose up -d --build
+          docker compose --compatibility up -d --build
           echo "Waiting for health check..."
           for i in $(seq 1 30); do
             if curl -sf http://localhost:9999/ready > /dev/null 2>&1; then
@@ -47,6 +47,8 @@ jobs:
             sleep 2
           done
           curl -sf http://localhost:9999/ready || (docker compose logs && exit 1)
+          echo "=== Resource limits ==="
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
 
       - name: Smoke test
         run: |
@@ -83,4 +85,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker compose down -v
+        run: docker compose --compatibility down -v
