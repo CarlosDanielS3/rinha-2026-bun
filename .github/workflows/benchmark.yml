@@ -32,7 +32,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - run: |
           bun install
-          bun run src/build-index.ts
+          RESOURCES_DIR=./resources OUTPUT_PATH=./index.bin bun run src/build-index.ts
           ls -lh index.bin
 
       - name: Build and start services
