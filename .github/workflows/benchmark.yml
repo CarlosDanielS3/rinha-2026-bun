@@ -30,6 +30,7 @@ jobs:
       - name: Generate test data
         run: |
           cd /tmp/rinha
+          gunzip -k resources/references.json.gz
           ./generate-data.sh
           ls -lh test/test-data.json
           echo "Test data generated"
