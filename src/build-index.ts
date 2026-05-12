@@ -10,7 +10,7 @@
 import { gunzipSync } from "zlib";
 
 const DIMS = 14;
-const NUM_CLUSTERS = 4096;
+const NUM_CLUSTERS = 256;
 const QUANT_SCALE = 10000;
 const KMEANS_ITERATIONS = 15;
 const RESOURCES_DIR = process.env.RESOURCES_DIR ?? "/resources";
