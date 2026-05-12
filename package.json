@@ -1,0 +1,13 @@
+{
+  "name": "rinha-2026-bun",
+  "version": "1.0.0",
+  "scripts": {
+    "build-index": "bun run src/build-index.ts",
+    "start:index": "bun run src/index-service/server.ts",
+    "start:api": "bun run src/api/server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
