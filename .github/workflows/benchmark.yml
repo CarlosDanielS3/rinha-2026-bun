@@ -1,0 +1,97 @@
+name: Benchmark (x86_64 AVX2)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout submission repo
+        uses: actions/checkout@v4
+
+      - name: Check AVX2 support
+        run: |
+          grep -o 'avx2' /proc/cpuinfo | head -1 || echo "WARNING: No AVX2!"
+          lscpu | grep -E 'Model name|CPU\(s\):|Thread'
+
+      - name: Clone competition repo (test harness + data generator)
+        run: |
+          git clone --depth 1 https://github.com/zanfranceschi/rinha-de-backend-2026.git /tmp/rinha
+
+      - name: Build data generator
+        run: |
+          cd /tmp/rinha/data-generator
+          make
+          ls -la generate
+
+      - name: Generate test data
+        run: |
+          cd /tmp/rinha
+          ./generate-data.sh
+          ls -lh test/test-data.json
+          echo "Test data generated"
+
+      - name: Build index
+        uses: oven-sh/setup-bun@v2
+      - run: |
+          bun install
+          bun run src/build-index.ts
+          ls -lh index.bin
+
+      - name: Build and start services
+        run: |
+          docker compose up -d --build
+          echo "Waiting for health check..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9999/ready > /dev/null 2>&1; then
+              echo "API ready after $i attempts"
+              break
+            fi
+            sleep 2
+          done
+          curl -sf http://localhost:9999/ready || (docker compose logs && exit 1)
+
+      - name: Smoke test
+        run: |
+          curl -s -X POST http://localhost:9999/fraud-score \
+            -H 'Content-Type: application/json' \
+            -d '{"id":"smoke","transaction":{"amount":500,"installments":3,"requested_at":"2025-01-15T14:30:00Z"},"customer":{"avg_amount":200,"tx_count_24h":5,"known_merchants":["m1"]},"merchant":{"id":"m2","mcc":"5411","avg_amount":300},"terminal":{"is_online":true,"card_present":false,"km_from_home":50},"last_transaction":{"timestamp":"2025-01-15T13:00:00Z","km_from_current":100}}' | jq .
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D68
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run benchmark
+        run: |
+          cd /tmp/rinha
+          K6_NO_USAGE_REPORT=true k6 run test/test.js 2>&1 | tail -30
+          echo ""
+          echo "========== RESULTS =========="
+          cat test/results.json | jq .
+
+      - name: Docker stats & logs
+        if: always()
+        run: |
+          docker stats --no-stream || true
+          echo "=== API-1 logs ==="
+          docker compose logs api-1 2>&1 | tail -15
+          echo "=== API-2 logs ==="
+          docker compose logs api-2 2>&1 | tail -15
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: /tmp/rinha/test/results.json
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
