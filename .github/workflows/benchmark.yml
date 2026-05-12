@@ -55,12 +55,7 @@ jobs:
             -d '{"id":"smoke","transaction":{"amount":500,"installments":3,"requested_at":"2025-01-15T14:30:00Z"},"customer":{"avg_amount":200,"tx_count_24h":5,"known_merchants":["m1"]},"merchant":{"id":"m2","mcc":"5411","avg_amount":300},"terminal":{"is_online":true,"card_present":false,"km_from_home":50},"last_transaction":{"timestamp":"2025-01-15T13:00:00Z","km_from_current":100}}' | jq .
 
       - name: Install k6
-        run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D68
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update
-          sudo apt-get install -y k6
+        uses: grafana/setup-k6-action@v1
 
       - name: Run benchmark
         run: |
